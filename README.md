@@ -18,6 +18,8 @@ Trigger Minecraft Bedrock commands from TikTok LIVE gifts using Termux and Node.
    cd ~/tiktok-mc
    chmod +x start.sh
    ./start.sh
+enter Ctrl + c
+
 2. Quick bridge
    ```bash
    node live_bridge.js
