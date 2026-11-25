@@ -1,0 +1,7 @@
+{
+  "username": "username_here",
+  "Rose": "summon tnt ~ ~2 ~",
+  "TikTok": "give @p diamond 1",
+  "Cap": "setblock ~ ~-1 ~ ice",
+  "GG": "summon lightning_bolt ~ ~ ~"
+}
