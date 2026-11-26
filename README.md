@@ -32,6 +32,7 @@ or `./start.sh`
   ```bash
   node simulator.js
 Run in Termux
+Type CTRL + c to exit a running bridge
 
 ## Configuration for gift & events
 1. Run in Termux:
