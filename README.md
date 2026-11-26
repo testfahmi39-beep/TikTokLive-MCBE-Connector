@@ -73,3 +73,7 @@ Type CTRL + c to exit a running bridge
     pkill -f "node " || true
   ./start.sh
 - **Enable WebSocket from Minecraft**: go to settings &rarr; general and enable `WebSocket` and disable `Required Encrypted WebSocket`
+4. **If you are running this from another phone and playing Minecraft to another phone**
+- After starting the bridge you need to connect it to Minecraft by using the chat and typing `/connect local_ip_address:8080`. It must be connected to a same `Wi-Fi` network. To find the local ip address you need to run this on `Termux`
+   ```bash
+   ip -4 addr show wlan0 | grep -oE 'inet [0-9.]+' | awk '{print $2}'
