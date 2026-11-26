@@ -64,4 +64,12 @@ Type CTRL + c to exit a running bridge
   ```bash
   pkg update && pkg upgrade -y && pkg install -y nodejs
 - **After that** try running `node live-bridge` or `./start.sh` again
-3. 
+3. Events didn't fire after running `node simulator.js`
+- Minecraft isn't connected to the WebSocket yet: Make sure you typed `/connect localhost:8080` in Minecraft chat after starting `live-bridge.js` or `simulator.js`, and check that Termux shows `✅ Minecraft connected!`.
+- Cheats or Operator permissions are off: In your Minecraft Bedrock world settings, make sure Activate Cheats is turned ON and your player has Operator permissions.
+- Gift name mismatch or invalid command in `config.json:` Check that the gift name in `config.json` matches the exact TikTok gift name (case-sensitive) and that the Minecraft command itself is valid in Bedrock Edition (for example, `summon tnt ~ ~2 ~`).
+- **Old Node process holding port** `8080`: If another script is still using port `8080`, stop leftover Node processes and restart:
+   ```bash
+    pkill -f "node " || true
+  ./start.sh
+- **Enable WebSocket from Minecraft**: go to settings &rarr; general and enable `WebSocket` and disable `Required Encrypted WebSocket`
