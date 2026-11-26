@@ -2,7 +2,7 @@ import fs from 'fs';
 import crypto from 'crypto';
 import readline from 'readline';
 import { WebSocketServer } from 'ws';
-import { TikTokLiveConnection } from 'piratetok-live-js';
+import { TikTokLiveClient } from 'piratetok-live-js';
 
 const PORT = 8080;
 const CONFIG_PATH = './config.json';
@@ -126,7 +126,7 @@ async function start() {
   }
 
   console.log(`🔌 Connecting to @${username}'s TikTok LIVE...`);
-  const tiktok = new TikTokLiveConnection(username);
+  const tiktok = new TikTokLiveClient(username);
 
   let accumulatedLikes = 0;
 
