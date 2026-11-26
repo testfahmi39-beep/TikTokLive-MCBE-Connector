@@ -60,7 +60,7 @@ Type CTRL + c to exit a running bridge
 - **After that** try rerun `cd ~/tiktok-mc
    nano config.json`
 2. Install Node.js
-- **If Termux says** `node:command not found` or `npm:command not found` it seems you didn't install Node.js yet, here's the command
+- **If Termux says** `node:command not found` or `npm:command not found` it seems you didn't install Node.js yet, here's the command:
   ```bash
   pkg update && pkg upgrade -y && pkg install -y nodejs
 - **After that** try running `node live-bridge` or `./start.sh` again
@@ -74,6 +74,7 @@ Type CTRL + c to exit a running bridge
   ./start.sh
 - **Enable WebSocket from Minecraft**: go to settings &rarr; general and enable `WebSocket` and disable `Required Encrypted WebSocket`
 4. **If you are running this from another phone and playing Minecraft to another phone**
-- After starting the bridge you need to connect it to Minecraft by using the chat and typing `/connect local_ip_address:8080`. It must be connected to a same `Wi-Fi` network. To find the local ip address you need to run this on `Termux`
+- After starting the bridge you need to connect it to Minecraft by using the chat and typing `/connect local_ip_address:8080`. It must be connected to a same `Wi-Fi` network. To find the local ip address you need to run this on `Termux`:
    ```bash
+   pkg i iproute2
    ip -4 addr show wlan0 | grep -oE 'inet [0-9.]+' | awk '{print $2}'
