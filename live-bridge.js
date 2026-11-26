@@ -9,7 +9,7 @@ const CONFIG_PATH = './config.json';
 
 function loadConfig() {
   if (!fs.existsSync(CONFIG_PATH)) {
-    console.error('❌ config.json not found! Run ./start.sh or create config.json first.');
+    console.error('❌ config.json not found! Create config.json first.');
     process.exit(1);
   }
   return JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
@@ -17,7 +17,6 @@ function loadConfig() {
 
 let config = loadConfig();
 
-// Watch config.json for live edits without needing a restart
 fs.watchFile(CONFIG_PATH, { interval: 1000 }, () => {
   try {
     config = loadConfig();
@@ -27,7 +26,6 @@ fs.watchFile(CONFIG_PATH, { interval: 1000 }, () => {
   }
 });
 
-// Start WebSocket server for Minecraft Bedrock
 const wss = new WebSocketServer({ port: PORT });
 let mcSocket = null;
 
@@ -52,7 +50,7 @@ function sendMinecraftCommand(command) {
     return;
   }
 
-  const packet = {
+  mcSocket.send(JSON.stringify({
     header: {
       version: 1,
       requestId: crypto.randomUUID(),
@@ -62,17 +60,12 @@ function sendMinecraftCommand(command) {
     body: {
       version: 1,
       commandLine: command,
-      origin: {
-        type: 'player'
-      }
+      origin: { type: 'player' }
     }
-  };
-
-  mcSocket.send(JSON.stringify(packet));
+  }));
   console.log(`🎮 Executed in Minecraft: /${command}`);
 }
 
-// Simple cooldown helper to prevent spam floods
 const lastTriggered = new Map();
 function canTrigger(key) {
   const cooldown = Number(config.cooldownMs ?? 1500);
@@ -83,7 +76,6 @@ function canTrigger(key) {
   return true;
 }
 
-// Lookup gift command (supports both new config.gifts and legacy top-level keys)
 function getGiftCommand(giftName) {
   if (!giftName) return null;
   if (config.gifts && config.gifts[giftName]) return config.gifts[giftName];
@@ -119,7 +111,8 @@ async function start() {
   console.log(`🚀 WebSocket server listening on port ${PORT}`);
   console.log(`👉 In Minecraft Bedrock chat, run: /connect localhost:${PORT}`);
 
-  const username = await askUsername();
+  const rawUsername = await askUsername();
+  const username = String(rawUsername || '').replace(/^@/, '').trim();
   if (!username) {
     console.error('❌ No username provided. Exiting.');
     process.exit(1);
@@ -132,12 +125,25 @@ async function start() {
 
   // 1. Gift Events
   tiktok.on('gift', (data) => {
-    if (data?.giftType === 1 && !data?.repeatEnd) return; // Wait for streak end
-    const giftName = data?.giftName || data?.extendedGiftInfo?.name || 'Unknown Gift';
-    const repeatCount = data?.repeatCount || 1;
-    const sender = data?.uniqueId || data?.user?.uniqueId || 'Viewer';
+    if (data?.giftType === 1 && !data?.repeatEnd) return;
+    const giftName =
+      data?.gift?.name ||
+      data?.giftDetails?.giftName ||
+      data?.extendedGiftInfo?.name ||
+      data?.giftName ||
+      data?.name ||
+      'Unknown Gift';
+    const repeatCount = data?.repeatCount || data?.comboCount || data?.count || 1;
+    const sender =
+      data?.user?.uniqueId ||
+      data?.user?.nickname ||
+      data?.uniqueId ||
+      'Viewer';
 
     console.log(`🎁 ${sender} sent ${repeatCount}x ${giftName}`);
+    if (giftName === 'Unknown Gift') {
+      console.log('🔍 Raw gift payload:', JSON.stringify(data));
+    }
     const cmd = getGiftCommand(giftName);
     if (cmd) {
       for (let i = 0; i < repeatCount; i++) {
@@ -148,7 +154,7 @@ async function start() {
 
   // 2. Likes Counter Milestone
   tiktok.on('like', (data) => {
-    const count = Number(data?.likeCount || 1);
+    const count = Number(data?.likeCount || data?.count || 1);
     accumulatedLikes += count;
 
     const milestone = config.events?.likeMilestone;
@@ -166,7 +172,7 @@ async function start() {
 
   // 3. New Follower
   tiktok.on('follow', (data) => {
-    const user = data?.uniqueId || data?.user?.uniqueId || 'Viewer';
+    const user = data?.user?.uniqueId || data?.uniqueId || 'Viewer';
     console.log(`➕ New follower: ${user}`);
     const cmd = config.events?.follow;
     if (cmd && canTrigger('follow')) {
@@ -176,7 +182,7 @@ async function start() {
 
   // 4. Share Event
   tiktok.on('share', (data) => {
-    const user = data?.uniqueId || data?.user?.uniqueId || 'Viewer';
+    const user = data?.user?.uniqueId || data?.uniqueId || 'Viewer';
     console.log(`🔁 ${user} shared the LIVE`);
     const cmd = config.events?.share;
     if (cmd && canTrigger('share')) {
@@ -186,7 +192,7 @@ async function start() {
 
   // 5. Viewer Join Event
   tiktok.on('join', (data) => {
-    const user = data?.uniqueId || data?.user?.uniqueId || 'Viewer';
+    const user = data?.user?.uniqueId || data?.uniqueId || 'Viewer';
     console.log(`👋 ${user} joined`);
     const cmd = config.events?.join;
     if (cmd && canTrigger('join')) {
@@ -196,10 +202,24 @@ async function start() {
 
   // 6. Chat Keyword Triggers
   tiktok.on('chat', (data) => {
-    const rawMsg = (data?.comment || '').trim();
+    const rawMsg = (
+      data?.text ||
+      data?.comment ||
+      data?.message ||
+      data?.content ||
+      ''
+    ).trim();
     const key = rawMsg.toLowerCase();
-    const user = data?.uniqueId || data?.user?.uniqueId || 'Viewer';
+    const user =
+      data?.user?.uniqueId ||
+      data?.user?.nickname ||
+      data?.uniqueId ||
+      'Viewer';
+
     console.log(`💬 ${user}: ${rawMsg}`);
+    if (!rawMsg) {
+      console.log('🔍 Raw chat payload:', JSON.stringify(data));
+    }
 
     if (config.chat) {
       const matchedKey = Object.keys(config.chat).find((k) => k.toLowerCase() === key);
@@ -207,6 +227,10 @@ async function start() {
         sendMinecraftCommand(config.chat[matchedKey]);
       }
     }
+  });
+
+  tiktok.on('connected', (state) => {
+    console.log(`✅ Connected to TikTok LIVE room${state?.roomId ? ` (Room ID: ${state.roomId})` : ''}`);
   });
 
   tiktok.on('disconnected', () => {
@@ -218,8 +242,7 @@ async function start() {
   });
 
   try {
-    const state = await tiktok.connect();
-    console.log(`✅ Connected to TikTok LIVE room (Room ID: ${state.roomId})`);
+    await tiktok.connect();
   } catch (err) {
     console.error('❌ Failed to connect to TikTok LIVE:', err?.message || err);
     console.log('💡 Make sure the user is currently LIVE and the username is spelled correctly.');
