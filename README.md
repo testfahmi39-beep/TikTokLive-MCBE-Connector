@@ -28,6 +28,10 @@ or `./start.sh`
 3. In Minecraft chat (Enable Cheats) type:
    ```bash
    /connect localhost:8080
+- **Simulated command for** testing if the events fires:
+  ```bash
+  node simulator.js
+Run in Termux
 
 ## Configuration for gift & events
 1. Run in Termux:
@@ -47,3 +51,16 @@ or `./start.sh`
     "GG": "summon lightning_bolt ~ ~ ~"`)
 
 ## Troubleshoot
+1. Can't Configure config.json
+- **If you run** `cd ~/tiktok-mc
+   nano config.json` and get an error it means you didn't install nano yet:
+  ```bash
+  pkg install -y nano
+- **After that** try rerun `cd ~/tiktok-mc
+   nano config.json`
+2. Install Node.js
+- **If Termux says** `node:command not found` or `npm:command not found` it seems you didn't install Node.js yet, here's the command
+  ```bash
+  pkg update && pkg upgrade -y && pkg install -y nodejs
+- **After that** try running `node live-bridge` or `./start.sh` again
+3. 
